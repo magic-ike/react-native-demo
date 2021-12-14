@@ -14,6 +14,8 @@ import HomeScreen from './screens/HomeScreen';
 import LoginScreen from './screens/LoginScreen';
 import SettingsScreen from './screens/SettingsScreen';
 import CustomDrawerComponent from './screens/DrawerNavigator/CustomDrawerComponent';
+import LoadingScreen from './screens/AppSwitchNavigator/LoadingScreen';
+
 import {
   createAppContainer,
   createSwitchNavigator,
@@ -83,6 +85,7 @@ const AppDrawerNavigator = createDrawerNavigator(
 );
 
 const AppSwitchNavigator = createSwitchNavigator({
+  LoadingScreen,
   LoginStackNavigator,
   AppDrawerNavigator,
 });
