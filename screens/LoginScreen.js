@@ -11,6 +11,7 @@ import colors from '../assets/colors';
 import CustomActionButton from '../components/CustomActionButton';
 import * as firebase from 'firebase/app';
 import 'firebase/auth';
+import 'firebase/database';
 class LoginScreen extends Component {
   constructor() {
     super();
@@ -60,7 +61,14 @@ class LoginScreen extends Component {
         if (response) {
           this.setState({ isLoading: false });
           //signin the user
-          this.onSignIn(this.state.email, this.state.password);
+          const user = await firebase
+            .database()
+            .ref('users/')
+            .child(response.user.uid)
+            .set({ email: response.user.email, uid: response.user.uid });
+
+          this.props.navigation.navigate('LoadingScreen');
+          // this.onSignIn(this.state.email, this.state.password);
         }
       } catch (error) {
         this.setState({ isLoading: false });
