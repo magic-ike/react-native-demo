@@ -8,6 +8,7 @@ import {
   TextInput,
   FlatList,
   Image,
+  ActivityIndicator,
 } from 'react-native';
 import BookCount from '../components/BookCount';
 import { Ionicons } from '@expo/vector-icons';
@@ -17,7 +18,11 @@ import * as firebase from 'firebase/app';
 import { snapshotToArray } from '../helpers/firebaseHelpers';
 import ListItem from '../components/ListItem';
 import * as Animatable from 'react-native-animatable';
-export default class HomeScreen extends React.Component {
+import { connect } from 'react-redux';
+import ListEmptyComponent from '../components/ListEmptyComponent';
+import Swipeout from 'react-native-swipeout';
+
+class HomeScreen extends React.Component {
   constructor() {
     super();
     this.state = {
@@ -54,10 +59,11 @@ export default class HomeScreen extends React.Component {
 
     this.setState({
       currentUser: currentUserData.val(),
-      books: booksArray,
-      booksReading: booksArray.filter((book) => !book.read),
-      booksRead: booksArray.filter((book) => book.read),
     });
+
+    this.props.loadBooks(booksArray.reverse());
+    this.props.toggleIsLoadingBooks(false);
+    console.log(this.props.books);
   };
 
   componentDidUpdate() {
@@ -104,18 +110,7 @@ export default class HomeScreen extends React.Component {
           .child(this.state.currentUser.uid)
           .child(key)
           .set({ name: book, read: false });
-
-        this.setState(
-          (state, props) => ({
-            books: [...state.books, { name: book, read: false }],
-            booksReading: [...state.booksReading, { name: book, read: false }],
-            // totalCount: state.totalCount + 1,
-            // readingCount: state.readingCount + 1
-          }),
-          () => {
-            console.log(this.state.books);
-          }
-        );
+        this.props.addBook({ name: book, read: false, key: key });
       }
     } catch (error) {
       console.log(error);
@@ -124,6 +119,8 @@ export default class HomeScreen extends React.Component {
 
   markAsRead = async (selectedBook, index) => {
     try {
+      this.props.toggleIsLoadingBooks(true);
+
       await firebase
         .database()
         .ref('books')
@@ -142,35 +139,121 @@ export default class HomeScreen extends React.Component {
         (book) => book.name !== selectedBook.name
       );
 
-      this.setState((prevState) => ({
-        books: books,
-        booksReading: booksReading,
-        booksRead: [
-          ...prevState.booksRead,
-          { name: selectedBook.name, read: true },
-        ],
-        // readingCount: prevState.readingCount - 1,
-        // readCount: prevState.readCount + 1
-      }));
+      this.props.markBookAsRead(selectedBook);
+      this.props.toggleIsLoadingBooks(false);
     } catch (error) {
       console.log(error);
+      this.props.toggleIsLoadingBooks(false);
     }
   };
 
-  renderItem = (item, index) => (
-    <ListItem item={item}>
-      {item.read ? (
-        <Ionicons name="ios-checkmark" color={colors.logoColor} size={30} />
-      ) : (
-        <CustomActionButton
-          style={styles.markAsReadButton}
-          onPress={() => this.markAsRead(item, index)}
+  markAsUnread = async (selectedBook, index) => {
+    try {
+      this.props.toggleIsLoadingBooks(true);
+
+      await firebase
+        .database()
+        .ref('books')
+        .child(this.state.currentUser.uid)
+        .child(selectedBook.key)
+        .update({ read: false });
+
+      this.props.markBookAsUnread(selectedBook);
+      this.props.toggleIsLoadingBooks(false);
+    } catch (error) {
+      console.log(error);
+      this.props.toggleIsLoadingBooks(false);
+    }
+  };
+
+  deleteBook = async (selectedBook, index) => {
+    try {
+      this.props.toggleIsLoadingBooks(true);
+
+      await firebase
+        .database()
+        .ref('books')
+        .child(this.state.currentUser.uid)
+        .child(selectedBook.key)
+        .remove();
+
+      this.props.deleteBook(selectedBook);
+      this.props.toggleIsLoadingBooks(false);
+    } catch (error) {
+      console.log(error);
+      this.props.toggleIsLoadingBooks(false);
+    }
+  };
+  renderItem = (item, index) => {
+    let swipeoutButtons = [
+      {
+        text: 'Delete',
+        component: (
+          <View
+            style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}
+          >
+            <Ionicons name="ios-trash" size={24} color={colors.txtWhite} />
+          </View>
+        ),
+        backgroundColor: colors.bgDelete,
+        onPress: () => this.deleteBook(item, index),
+      },
+    ];
+
+    if (!item.read) {
+      swipeoutButtons.unshift({
+        text: 'Mark Read',
+        component: (
+          <View
+            style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}
+          >
+            <Text style={{ color: colors.txtWhite }}>Mark as Read</Text>
+          </View>
+        ),
+        backgroundColor: colors.bgSuccessDark,
+        onPress: () => this.markAsRead(item, index),
+      });
+    } else {
+      swipeoutButtons.unshift({
+        text: 'Mark Unread',
+        component: (
+          <View
+            style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}
+          >
+            <Text style={{ color: colors.txtWhite }}>Mark Unread</Text>
+          </View>
+        ),
+        backgroundColor: colors.bgUnread,
+        onPress: () => this.markAsUnread(item, index),
+      });
+    }
+
+    return (
+      <Swipeout
+        autoClose={true}
+        style={{ marginHorizontal: 5, marginVertical: 5 }}
+        backgroundColor={colors.bgMain}
+        right={swipeoutButtons}
+      >
+        <ListItem
+          onPress={() => this.addBookImage(item)}
+          editable={true}
+          marginVertical={0}
+          item={item}
         >
-          <Text style={styles.markAsReadButtonText}>Mark as read</Text>
-        </CustomActionButton>
-      )}
-    </ListItem>
-  );
+          {item.read && (
+            <Ionicons
+              style={{ marginRight: 5 }}
+              name="ios-checkmark"
+              color={colors.logoColor}
+              size={30}
+            />
+          )}
+        </ListItem>
+      </Swipeout>
+    );
+  };
+
   render() {
     console.log('render');
     return (
@@ -178,6 +261,19 @@ export default class HomeScreen extends React.Component {
         <SafeAreaView />
 
         <View style={styles.container}>
+          {this.props.books.isLoadingBooks && (
+            <View
+              style={{
+                ...StyleSheet.absoluteFill,
+                alignItems: 'center',
+                justifyContent: 'center',
+                zIndex: 1000,
+                elevation: 1000,
+              }}
+            >
+              <ActivityIndicator size="large" color={colors.logoColor} />
+            </View>
+          )}
           <View style={styles.textInputContainer}>
             <TextInput
               style={styles.textInput}
@@ -196,11 +292,11 @@ export default class HomeScreen extends React.Component {
                 style={styles.textInput}
                 placeholder="Enter Book Name"
                 placeholderTextColor="grey"
-                onChangeText={text => this.setState({ textInputData: text })}
+                onChangeText={text => this.setState({ textInputdata: text })}
               />
               <CustomActionButton
                 style={styles.checkmarkButton}
-                onPress={() => this.addBook(this.state.textInputData)}
+                onPress={() => this.addBook(this.state.textInputdata)}
               >
                 <Ionicons name="ios-checkmark" size={40} color="white" />
               </CustomActionButton>
@@ -212,15 +308,13 @@ export default class HomeScreen extends React.Component {
           )} */}
 
           <FlatList
-            data={this.state.books}
+            data={this.props.books.books}
             renderItem={({ item }, index) => this.renderItem(item, index)}
             keyExtractor={(item, index) => index.toString()}
             ListEmptyComponent={
-              <View style={styles.listEmptyComponent}>
-                <Text style={styles.listEmptyComponentText}>
-                  Not Reading any books
-                </Text>
-              </View>
+              !this.props.books.isLoadingBooks && (
+                <ListEmptyComponent text="Not Reading Any Books." />
+              )
             }
           />
           <Animatable.View
@@ -250,6 +344,29 @@ export default class HomeScreen extends React.Component {
     );
   }
 }
+
+const mapStateToProps = (state) => {
+  return {
+    books: state.books,
+  };
+};
+
+const mapDispatchToProps = (dispatch) => {
+  return {
+    loadBooks: (books) =>
+      dispatch({ type: 'LOAD_BOOKS_FROM_SERVER', payload: books }),
+    addBook: (book) => dispatch({ type: 'ADD_BOOK', payload: book }),
+    markBookAsRead: (book) =>
+      dispatch({ type: 'MARK_BOOK_AS_READ', payload: book }),
+    toggleIsLoadingBooks: (bool) =>
+      dispatch({ type: 'TOGGLE_IS_LOADING_BOOKS', payload: bool }),
+    markBookAsUnread: (book) =>
+      dispatch({ type: 'MARK_BOOK_AS_UNREAD', payload: book }),
+    deleteBook: (book) => dispatch({ type: 'DELETE_BOOK', payload: book }),
+  };
+};
+
+export default connect(mapStateToProps, mapDispatchToProps)(HomeScreen);
 
 const styles = StyleSheet.create({
   container: {

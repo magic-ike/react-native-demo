@@ -1,17 +1,22 @@
 import React from 'react';
 import { View, Text, StyleSheet, Image } from 'react-native';
 import colors from '../assets/colors';
-const ListItem = ({ item, children }) => (
+const ListItem = ({ item, children, marginVertical }) => (
   <View style={styles.listItemContainer}>
     <View style={styles.imageContainer}>
       <Image source={require('../assets/icon.png')} style={styles.image} />
     </View>
-    <View style={styles.listItemTitleContainer}>
+    <View style={[styles.listItemTitleContainer, { marginVertical }]}>
       <Text style={styles.listItemTitle}>{item.name}</Text>
     </View>
     {children}
   </View>
 );
+
+ListItem.defaultProps = {
+  marginVertical: 5,
+};
+
 export default ListItem;
 
 const styles = StyleSheet.create({
@@ -20,7 +25,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     backgroundColor: colors.listItemBg,
     alignItems: 'center',
-    marginVertical: 5,
   },
   imageContainer: {
     height: 70,
