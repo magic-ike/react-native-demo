@@ -6,7 +6,7 @@ import {
   SafeAreaView,
   TouchableOpacity,
   TextInput,
-  FlatList
+  FlatList,
 } from 'react-native';
 
 import WelcomeScreen from './screens/AppSwitchNavigator/WelcomeScreen';
@@ -22,8 +22,9 @@ import {
   createSwitchNavigator,
   createStackNavigator,
   createDrawerNavigator,
-  createBottomTabNavigator
+  createBottomTabNavigator,
 } from 'react-navigation';
+import { ActionSheetProvider } from '@expo/react-native-action-sheet';
 import colors from './assets/colors';
 import { Ionicons } from '@expo/vector-icons';
 
@@ -33,7 +34,6 @@ import { firebaseConfig } from './config/config';
 import { Provider } from 'react-redux';
 import store from './redux/store';
 import BooksCountContainer from './redux/containers/BooksCountContainer';
-
 class App extends React.Component {
   constructor() {
     super();
@@ -47,7 +47,9 @@ class App extends React.Component {
   render() {
     return (
       <Provider store={store}>
-        <AppContainer />
+        <ActionSheetProvider>
+          <AppContainer />
+        </ActionSheetProvider>
       </Provider>
     );
   }
@@ -57,18 +59,18 @@ const LoginStackNavigator = createStackNavigator(
     WelcomeScreen: {
       screen: WelcomeScreen,
       navigationOptions: {
-        header: null
-      }
+        header: null,
+      },
     },
-    LoginScreen
+    LoginScreen,
   },
   {
     mode: 'modal',
     defaultNavigationOptions: {
       headerStyle: {
-        backgroundColor: colors.bgMain
-      }
-    }
+        backgroundColor: colors.bgMain,
+      },
+    },
   }
 );
 
@@ -80,8 +82,8 @@ const HomeTabNavigator = createBottomTabNavigator(
         tabBarLabel: 'Total Books',
         tabBarIcon: ({ tintColor }) => (
           <BooksCountContainer color={tintColor} type="books" />
-        )
-      }
+        ),
+      },
     },
     BooksReadingScreen: {
       screen: BooksReadingScreen,
@@ -89,8 +91,8 @@ const HomeTabNavigator = createBottomTabNavigator(
         tabBarLabel: 'Books Reading',
         tabBarIcon: ({ tintColor }) => (
           <BooksCountContainer color={tintColor} type="booksReading" />
-        )
-      }
+        ),
+      },
     },
     BooksReadScreen: {
       screen: BooksReadScreen,
@@ -98,18 +100,18 @@ const HomeTabNavigator = createBottomTabNavigator(
         tabBarLabel: 'Books Read',
         tabBarIcon: ({ tintColor }) => (
           <BooksCountContainer color={tintColor} type="booksRead" />
-        )
-      }
-    }
+        ),
+      },
+    },
   },
   {
     tabBarOptions: {
       style: {
-        backgroundColor: colors.bgMain
+        backgroundColor: colors.bgMain,
       },
       activeTintColor: colors.logoColor,
-      inactiveTintColor: colors.bgTextInput
-    }
+      inactiveTintColor: colors.bgTextInput,
+    },
   }
 );
 
@@ -119,19 +121,19 @@ HomeTabNavigator.navigationOptions = ({ navigation }) => {
   switch (routeName) {
     case 'HomeScreen':
       return {
-        headerTitle: 'Total Books'
+        headerTitle: 'Total Books',
       };
     case 'BooksReadingScreen':
       return {
-        headerTitle: 'Books Reading'
+        headerTitle: 'Books Reading',
       };
     case 'BooksReadScreen':
       return {
-        headerTitle: 'Books Read'
+        headerTitle: 'Books Read',
       };
     default:
       return {
-        headerTitle: 'Book Worm'
+        headerTitle: 'Book Worm',
       };
   }
 };
@@ -150,18 +152,18 @@ const HomeStackNavigator = createStackNavigator(
               onPress={() => navigation.openDrawer()}
               style={{ marginLeft: 10 }}
             />
-          )
+          ),
         };
-      }
-    }
+      },
+    },
   },
   {
     defaultNavigationOptions: {
       headerStyle: {
-        backgroundColor: colors.bgMain
+        backgroundColor: colors.bgMain,
       },
-      headerTintColor: colors.txtWhite
-    }
+      headerTintColor: colors.txtWhite,
+    },
   }
 );
 
@@ -171,26 +173,26 @@ const AppDrawerNavigator = createDrawerNavigator(
       screen: HomeStackNavigator,
       navigationOptions: {
         title: 'Home',
-        drawerIcon: () => <Ionicons name="ios-home" size={24} />
-      }
+        drawerIcon: () => <Ionicons name="ios-home" size={24} />,
+      },
     },
     SettingsScreen: {
       screen: SettingsScreen,
       navigationOptions: {
         title: 'Settings',
-        drawerIcon: () => <Ionicons name="ios-settings" size={24} />
-      }
-    }
+        drawerIcon: () => <Ionicons name="ios-settings" size={24} />,
+      },
+    },
   },
   {
-    contentComponent: CustomDrawerComponent
+    contentComponent: CustomDrawerComponent,
   }
 );
 
 const AppSwitchNavigator = createSwitchNavigator({
   LoadingScreen,
   LoginStackNavigator,
-  AppDrawerNavigator
+  AppDrawerNavigator,
 });
 
 const AppContainer = createAppContainer(AppSwitchNavigator);
