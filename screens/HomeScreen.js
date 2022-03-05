@@ -45,8 +45,7 @@ class HomeScreen extends React.Component {
   }
 
   componentDidMount = async () => {
-    const { navigation } = this.props;
-    const user = navigation.getParam('user');
+    const user = this.props.currentUser;
     const currentUserData = await firebase
       .database()
       .ref('users')
@@ -426,6 +425,7 @@ class HomeScreen extends React.Component {
 const mapStateToProps = (state) => {
   return {
     books: state.books,
+    currentUser: state.auth.currentUser,
   };
 };
 

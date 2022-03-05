@@ -12,6 +12,7 @@ import CustomActionButton from '../components/CustomActionButton';
 import * as firebase from 'firebase/app';
 import 'firebase/auth';
 import 'firebase/database';
+import { connect } from 'react-redux';
 class LoginScreen extends Component {
   constructor() {
     super();
@@ -30,8 +31,8 @@ class LoginScreen extends Component {
           .signInWithEmailAndPassword(this.state.email, this.state.password);
         if (response) {
           this.setState({ isLoading: false });
-          //navigate the user
-          this.props.navigation.navigate('LoadingScreen');
+          this.props.signIn(response.user);
+          // this.props.navigation.navigate('LoadingScreen');
         }
       } catch (error) {
         this.setState({ isLoading: false });
@@ -43,11 +44,8 @@ class LoginScreen extends Component {
             alert('Please enter an email address');
         }
       }
-    } else {
-      alert('Please enter email and password');
     }
   };
-
   onSignUp = async () => {
     if (this.state.email && this.state.password) {
       this.setState({ isLoading: true });
@@ -60,15 +58,14 @@ class LoginScreen extends Component {
           );
         if (response) {
           this.setState({ isLoading: false });
-          //signin the user
           const user = await firebase
             .database()
-            .ref('users/')
+            .ref('users')
             .child(response.user.uid)
             .set({ email: response.user.email, uid: response.user.uid });
 
           this.props.navigation.navigate('LoadingScreen');
-          // this.onSignIn(this.state.email, this.state.password);
+          //automatically signs in the user
         }
       } catch (error) {
         this.setState({ isLoading: false });
@@ -135,7 +132,13 @@ class LoginScreen extends Component {
     );
   }
 }
-export default LoginScreen;
+
+const mapDispatchToProps = (dispatch) => {
+  return {
+    signIn: (user) => dispatch({ type: 'SIGN_IN', payload: user }),
+  };
+};
+export default connect(null, mapDispatchToProps)(LoginScreen);
 
 const styles = StyleSheet.create({
   container: {
